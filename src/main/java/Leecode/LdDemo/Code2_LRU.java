@@ -48,7 +48,7 @@ public class Code2_LRU {
 	}
 
 	public static void main(String[] args) throws Exception {
-		LRUCache<String, String> lc = new LRUCache<String, String>(4);
+		LRUCache2<String, String> lc = new LRUCache2<String, String>(4);
 		lc.put("a", "a");
 		lc.put("b", "b");
 		lc.put("c", "c");
@@ -56,14 +56,143 @@ public class Code2_LRU {
 		lc.put("e", "e");
 		lc.put("f", "f");
 
-		lc.get("d");
+		lc.put("g", "d");
+		lc.put("h", "e");
+		lc.put("i", "f");
 
-		lc.get("e");
-		lc.put("a", "a");
 		lc.printAllNode();
 		// System.out.println(lc);
 	}
 
+}
+
+class LRUCache2<K, V> {
+	private int size = 0;
+	private int capacity = 0;
+	private HashMap<K, Node> map = new HashMap<K, Node>();
+	private Node head;
+	private Node tail;
+
+	class Node<K, V> {
+		V value = null;
+		K key = null;
+		Node pro = null;
+		Node next = null;
+
+		public Node(K k, V v) {
+			this.value = v;
+			this.key = k;
+		}
+
+		@Override
+		public String toString() {
+			return " " + value;
+		}
+	}
+
+	public LRUCache2(int cap) throws Exception {
+		if (cap <= 0) {
+			throw new Exception("err cap");
+		}
+		this.capacity = cap;
+
+		// 创建连个哨兵节点；只占位置 不影响数据存储，这样可以在插入删除时减少判断
+		head = new Node(" HEAD ", null);
+		tail = new Node(" TAIL ", null);
+
+		head.next = tail;
+		tail.pro = head;
+	}
+
+	public void printAllNode() {
+
+		Node tmp = head;
+		System.out.print(tmp.key);
+		while (tmp.next != null) {
+			System.out.print(tmp.next.key + " ");
+			tmp = tmp.next;
+		}
+		System.out.println("");
+
+		tmp = tail;
+		System.out.print(tmp.key);
+		while (tmp.pro != null) {
+			System.out.print(tmp.pro.key + " ");
+			tmp = tmp.pro;
+		}
+		System.out.println("");
+	}
+
+	public void put(K key, V value) {
+
+		if (map.get(key) != null) {
+			map.get(key).value = value;// 更新数值
+			refreshNode2Tail(map.get(key));// 将访问过的node放到链表末尾
+		} else {
+			Node node = new Node(key, value);
+			if (size >= capacity) {
+				map.remove(head.next.key);
+				removeHead();
+			} else {
+				size++;
+			}
+			add2Tail(node);
+			map.put(key, node);
+		}
+	}
+
+	public V get(K key) {
+		Node node = map.get(key);
+		if (node == null) {
+			return null;
+		} else {
+			refreshNode2Tail(node);
+			return (V) node.value;
+		}
+	}
+
+	public void removeHead() {
+
+		Node headNextNext = head.next.next;
+
+		if (headNextNext == null) {// 说明只有head 和 tail 两个节点
+			return;
+		}
+		head.next = headNextNext;
+		headNextNext.pro = head;
+
+	}
+
+	public void add2Tail(Node node) {
+		Node tailPro = tail.pro;
+		tailPro.next = node;
+		node.pro = tailPro;
+		node.next = tail;
+		tail.pro = node;
+	}
+
+	public void refreshNode2Tail(Node node) {
+		if (node == null) {
+			return;
+		}
+
+		Node nodePro = node.pro;
+		Node nodeNext = node.next;
+		nodePro.next = nodeNext;
+		nodeNext.pro = nodePro;
+
+		Node tailPro = tail.pro;
+
+		tailPro.next = node;
+		node.pro = tailPro;
+
+		node.next = tail;
+		tail.pro = node;
+	}
+
+	public String toString() {
+		return " head:" + head.key + "\n tail:" + tail.key + "\n" + map.toString();
+	}
 }
 
 class LRUCache<K, V> {
